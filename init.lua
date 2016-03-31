@@ -23,6 +23,8 @@ local googlemaps={}
     sink = ltn12.sink.table(resp),
     protocol = "tlsv1"
   }
+  assert(string.match(statuscode, "OK"),"Problem while querying Google Maps API: "..statuscode)
+  
   local answer=""
   for _,v in ipairs(resp) do
     answer=answer..v
@@ -253,7 +255,6 @@ function googlemaps.capture_street_view(lat,long,heading,size,filename,key)
   url=url.."&location="..lat..","..long 
   url=url.."&heading="..heading  
   url=url.."&key="..key
-  print(url)
   local https = require 'ssl.https'
    local resp={}
    local result, content, h, statuscode = https.request{
@@ -261,12 +262,13 @@ function googlemaps.capture_street_view(lat,long,heading,size,filename,key)
     sink = ltn12.sink.table(resp),
     protocol = "tlsv1"
   }
+  assert(string.match(statuscode, "OK"),"Problem while querying Google Maps API: "..statuscode)
   local answer=""
   for _,v in ipairs(resp) do
     answer=answer..v
   end
   
-  local output=io.open(outputfile,"wb")
+  local output=io.open(filename,"wb")
   output:write(answer)
   output:close()
 end

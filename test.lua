@@ -1,5 +1,5 @@
 local googlemaps=require('googlemaps')
-require('mykey.lua')
+require('mykey.lua') -- where KEY = ..... is defined
 MODE="driving"
  
 --local polyline="kywjHco|LWUi@WKIGISQcA~@"
@@ -12,7 +12,7 @@ local json=googlemaps.direction("48.829457,2.285350","49.1226,2.282287",MODE,KEY
 print(json)
 
 ----- Create a polyline from polylines
-print("== EXAMPLE 2 : assemble a sequence of polylines")
+print("== EXAMPLE 2 : assemble a sequence of polylines and save the corresponding map")
 local leg=json.routes[1].legs[1]
 
 local polylines={}
@@ -24,6 +24,8 @@ local polylines_str=googlemaps.assemble_polylines(polylines)
 googlemaps.save_map_polyline("640x480",polylines_str,"tmp.png",KEY)
 
 
+print("== EXAMPLE 3 : save a street view image")
+googlemaps.capture_street_view(49.1226,2.282287,180,"640x480","view.png",KEY)
 ---- nb_steps
 --local idx=1
 --for s=1,5 do
