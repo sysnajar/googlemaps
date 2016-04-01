@@ -1,5 +1,3 @@
-require("json")
-
 
 local googlemaps={}
  
@@ -113,12 +111,22 @@ end
 -- This function save a PNG file corresponding to a map
 --@params size a string corresponding to the size of the image e.g 640x480
 --@params filename the name of the output file
+--@params markers a set of points (each point is point.lat, point.lng
 --@params polyline the string corresponding to the trajectory one wants to draw on the map. This trajectory is a string in the polyline format (not too long)
 --@params key the API key
-function googlemaps.save_map_polyline(size,polyline_str,filename,key)
+--- markers or polyline must be not nil
+function googlemaps.save_map(size,polyline_str,markers,filename,key)
+  assert((polyline_str~=nil) or (markers~=nil),"You must give at least a polyline or a set of markers")
   local url="https://maps.googleapis.com/maps/api/staticmap?"
   url=url.."size="..size
-  url=url.."&path=weight:3%7Ccolor:blue%7Cenc:"..polyline_str
+  if (polyline_str~=nil) then url=url.."&path=weight:3%7Ccolor:blue%7Cenc:"..polyline_str end
+  if (markers~=nil) then
+    url=url.."&markers="
+    for i=1,#markers do
+      if (i>1) then url=url.."%7C" end
+      url=url..markers[i].lat..","..markers[i].lng 
+    end
+  end
   url=url.."&key="..key
   local https = require 'ssl.https'
    local resp={}
@@ -135,7 +143,7 @@ function googlemaps.save_map_polyline(size,polyline_str,filename,key)
   local output=io.open(filename,"wb")
   output:write(answer)
   output:close()
-end
+end  
   
 -----
 -- This function compute the heading (in degree between 0 and 360) given one start_position and one end_position).
@@ -273,9 +281,34 @@ function googlemaps.capture_street_view(lat,long,heading,size,filename,key)
   output:close()
 end
 
+--- Returns the closest point on an existing road using the google Roads API
+
+function googlemaps.get_point_on_road(lat,lng,key)
+   local url="https://roads.googleapis.com/v1/snapToRoads?path="..lat..","..lng.."&key="..key
+  local https = require 'ssl.https'
+   local resp={}
+   local result, content, h, statuscode = https.request{
+    url = url,
+    sink = ltn12.sink.table(resp),
+    protocol = "tlsv1"
+  }
+  assert(string.match(statuscode, "OK"),"Problem while querying Google Roads API: "..statuscode)
+  local answer=""
+  for _,v in ipairs(resp) do
+    answer=answer..v
+  end
+  local cjson=require 'cjson'
+  local j=cjson.decode(answer)  
+  local retour={}
+  if (j.snappedPoints==nil) then 
+    retour.lat=lat 
+    retour.lng=lng 
+    return retour
+  end
+  retour.lat=j.snappedPoints[1].location.latitude
+  retour.lng=j.snappedPoints[1].location.longitude  
+  return retour
+end
+
 return googlemaps
-
-
-   
-
 
